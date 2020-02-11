@@ -494,7 +494,6 @@ class ReshuffleTest(unittest.TestCase):
                               {'name': 'foo', 'timestamp': MIN_TIMESTAMP},
                               {'name': 'foo', 'timestamp': 0},
                               {'name': 'bar', 'timestamp': 33},
-                              {'name': 'bar', 'timestamp': MAX_TIMESTAMP},
                           ])
                           | beam.Map(
                               lambda element: beam.window.TimestampedValue(
@@ -526,8 +525,7 @@ class ReshuffleTest(unittest.TestCase):
 
       expected_data = ['MIN_TIMESTAMP - foo',
                        'Timestamp(0) - foo',
-                       'Timestamp(33) - bar',
-                       'MAX_TIMESTAMP - bar']
+                       'Timestamp(33) - bar']
 
       # Can't compare formatted_before_reshuffle and formatted_after_reshuffle
       # directly, because they are deferred PCollections while equal_to only
