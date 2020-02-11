@@ -494,7 +494,7 @@ class ReshuffleTest(unittest.TestCase):
                               {'name': 'foo', 'timestamp': MIN_TIMESTAMP},
                               {'name': 'foo', 'timestamp': 0},
                               {'name': 'bar', 'timestamp': 33},
-                              {'name': 'foo', 'timestamp': MAX_TIMESTAMP},
+                              {'name': 'bar', 'timestamp': MAX_TIMESTAMP},
                           ])
                           | beam.Map(
                               lambda element: beam.window.TimestampedValue(
