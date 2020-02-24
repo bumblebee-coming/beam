@@ -461,42 +461,30 @@ class CombineTest(unittest.TestCase):
           | beam.CombineGlobally(combine.MeanCombineFn()).with_fanout(11))
       assert_that(result, equal_to([49.5]))
 
-  def test_combining_with_accumulation_mode_and_fanout(self):
-    # PCollection will contain elements from 1 to 5.
-    elements = [i for i in range(1, 6)]
+   def test_combining_with_accumulation_mode_and_fanout(self):
+      # PCollection will contain elements from 1 to 5.
+      elements = [i for i in range(1, 6)]
 
-    ts = TestStream().advance_watermark_to(0)
-    for i in elements:
-      ts.add_elements([i])
-    ts.advance_watermark_to_infinity()
+      ts = TestStream().advance_watermark_to(0)
+      for i in elements:
+        ts.add_elements([i])
+      ts.advance_watermark_to_infinity()
 
-    def early_firing(element, num_partitions):
-      return 0 if element < 15 else 1
+      options = PipelineOptions()
+      options.view_as(StandardOptions).streaming = True
+      with TestPipeline(options=options) as p:
+        result = (
+            p
+            | ts
+            | beam.WindowInto(
+                GlobalWindows(),
+                accumulation_mode=trigger.AccumulationMode.ACCUMULATING,
+                trigger=AfterWatermark(early=AfterAll(AfterCount(1))))
+            | beam.CombineGlobally(sum).without_defaults().with_fanout(2))
 
-    options = PipelineOptions()
-    options.view_as(StandardOptions).streaming = True
-    with TestPipeline(options=options) as p:
-      result = (
-          p
-          | ts
-          | beam.WindowInto(
-              GlobalWindows(),
-              accumulation_mode=trigger.AccumulationMode.ACCUMULATING,
-              trigger=AfterWatermark(early=AfterAll(AfterCount(1))))
-          | beam.CombineGlobally(sum).without_defaults().with_fanout(2))
-
-      # Partition the result into early_firings and other_firings.
-      # The early_frings for DISCARDING mode is [1, 2, 3, 4].
-      # The other_frings for DISCARDING mode is [5, 0, ...]. Different runners
-      # have different number of 0s.
-      # The early_frings for ACCUMULATING mode is [1, 3, 6, 10].
-      # The other_frings for ACCUMULATING mode is [15, 15, ...]. Different runners
-      # have different number of 15s.
-      early_firings, other_firings = (
-          result
-          | beam.Partition(early_firing, 2))
-      exepected_early_firings = [1, 3, 6, 10]
-      assert_that(early_firings, equal_to(exepected_early_firings))
+        # The frings for DISCARDING mode is [1, 2, 3, 4, 5, 0, 0].
+        firings = [1, 3, 6, 10, 15, 15, 15]
+        assert_that(result, equal_to(firings))
 
 
   def test_MeanCombineFn_combine(self):
