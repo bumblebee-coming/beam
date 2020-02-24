@@ -486,7 +486,6 @@ class CombineTest(unittest.TestCase):
       firings = [1, 3, 6, 10, 15, 15, 15]
       assert_that(result, equal_to(firings))
 
-
   def test_MeanCombineFn_combine(self):
     with TestPipeline() as p:
       input = (
